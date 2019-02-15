@@ -1,19 +1,21 @@
 import csv
+import configparser
 
 listPrice = []
 listPriceOld = []
 listItems = []
 listItemsOld = []
+
+listUpdated = []
 listAdded = []
 listRemoved = []
-#result = []
 
-def getItem(list):
-	for i in list:
-		print(i.sku),
-		print(i.name),
-		print(i.price)
-
+# read config
+try:
+	config = configparser.ConfigParser()
+	config.read('config.ini')
+except KeyError:
+	print("[ERROR] config.ini not valid")
 
 class Item(object):
 	def __init__(self, sku, name, price):
@@ -21,20 +23,25 @@ class Item(object):
 		self.name = name;
 		self.price = price;
 
-	def getSku(self):
-		return self.sku;
+def fileReadAppend(name, list):
+	with open(name) as file:
+		reader = csv.DictReader(file, delimiter=config['CSV']['DelimiterCSV'])
+		for line in reader:
+			list.append(Item(line[config['TABLE']['ColumnVendorCode']], line[config['TABLE']['ColumnNameItem']], line[config['TABLE']['ColumnPriceItem']]))
+
+def getSkuItemsAppend(listAppend, listItems):
+	for item in listItems:
+		listAppend.append(item.sku)
+
+#def getInfoBySku(sku):
+	#
  
 if __name__ == "__main__":
-	with open("price_old.csv") as fo:
-		reader = csv.DictReader(fo, delimiter=';')
-		for line in reader:
-			listItemsOld.append(Item(line["_SKU_"], line["_NAME_"], line["_PRICE_"]))
+	fileReadAppend(config['DEFAULT']['NameFile'] + '.' + config['DEFAULT']['FormatPrice'], listItems)
+	fileReadAppend(config['DEFAULT']['NameFileOld'] + '.' + config['DEFAULT']['FormatPrice'], listItemsOld)
 
-	with open("price.csv") as f:
-		reader = csv.DictReader(f, delimiter=';')
-		for line in reader:
-			listItems.append(Item(line["_SKU_"], line["_NAME_"], line["_PRICE_"]))
-
+	getSkuItemsAppend(listPrice, listItems)
+	getSkuItemsAppend(listPriceOld, listItemsOld)
 
 	for result in list(set(listPrice) ^ set(listPriceOld)):
 		if result in listPrice:
@@ -42,7 +49,9 @@ if __name__ == "__main__":
 		else:
 			listRemoved.append(result)
 
-	getItem(listRemoved)
+	listUpdated = list(set(listPrice) & set(listPriceOld))
 
-	#print(listRemoved)
-	#print(listAdded)
+	print('Updated: ' + str(listUpdated))
+	print('Added: ' + str(listAdded))
+	print('Deleted: ' + str(listRemoved))
+	
