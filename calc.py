@@ -2,13 +2,13 @@ import csv
 import configparser
 
 listPrice = []
-listPriceOld = []
+listPriceSite = []
 listItems = []
-listItemsOld = []
+listItemsSite = []
 
-listUpdated = []
-listAdded = []
-listRemoved = []
+listUnchanged = []
+listValid = []
+listNotValid = []
 
 # read config
 try:
@@ -38,20 +38,20 @@ def getSkuItemsAppend(listAppend, listItems):
  
 if __name__ == "__main__":
 	fileReadAppend(config['DEFAULT']['NameFile'] + '.' + config['DEFAULT']['FormatPrice'], listItems)
-	fileReadAppend(config['DEFAULT']['NameFileOld'] + '.' + config['DEFAULT']['FormatPrice'], listItemsOld)
+	fileReadAppend(config['DEFAULT']['NameFileOld'] + '.' + config['DEFAULT']['FormatPrice'], listItemsSite)
 
 	getSkuItemsAppend(listPrice, listItems)
-	getSkuItemsAppend(listPriceOld, listItemsOld)
+	getSkuItemsAppend(listPriceSite, listItemsSite)
 
-	for result in list(set(listPrice) ^ set(listPriceOld)):
+	for result in list(set(listPrice) ^ set(listPriceSite)):
 		if result in listPrice:
-			listAdded.append(result)
+			listValid.append(result)
 		else:
-			listRemoved.append(result)
+			listNotValid.append(result)
 
-	listUpdated = list(set(listPrice) & set(listPriceOld))
+	listUnchanged = list(set(listPrice) & set(listPriceSite))
 
-	print('Updated: ' + str(listUpdated))
-	print('Added: ' + str(listAdded))
-	print('Deleted: ' + str(listRemoved))
+	print('Unchanged: ' + str(listUnchanged))
+	print('Exist in ' + config['DEFAULT']['NameFile'] + '.' + config['DEFAULT']['FormatPrice'] + ': ' + str(listValid))
+	print('Exist in ' + config['DEFAULT']['NameFileOld'] + '.' + config['DEFAULT']['FormatPrice'] + ': ' + str(listNotValid))
 	
