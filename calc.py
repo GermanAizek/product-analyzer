@@ -6,9 +6,29 @@ listPriceSite = []
 listItems = []
 listItemsSite = []
 
-listUnchanged = []
-listValid = []
-listNotValid = []
+listPrice = []
+listSecond = []
+
+# Print iterations progress
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█'):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = '\r')
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
 
 # read config
 try:
@@ -30,16 +50,36 @@ def fileReadAppend(name, list):
 			list.append(Item(line[config['TABLE']['ColumnVendorCode']], line[config['TABLE']['ColumnNameItem']], line[config['TABLE']['ColumnPriceItem']]))
 
 def getSkuItemsAppend(listAppend, listItems):
-	for item in listItems:
+	length = len(listItems)
+	printProgressBar(0, length, prefix = 'Getting SKU, Items Append:', suffix = 'Complete', length = 50)
+	for idx, item in enumerate(listItems):
 		listAppend.append(item.sku)
+		printProgressBar(idx + 1, length, prefix = 'Getting SKU, Items Append:', suffix = 'Complete', length = 50)
 
 def getInfoBySku(sku):
 	for item in listItems:
-		for item in listItemsSite:
-			if sku == item.sku:
-				break
+		if sku == item.sku:
+			break
+
+	for item in listItemsSite:
+		if sku == item.sku:
+			break
 
 	return item.name, item.price
+
+def writeInFile(name, list):
+	with open(name + '_result.' + config['DEFAULT']['FormatPrice'], 'w', newline='') as csvfile:
+		fieldnames = ['_SKU_', '_NAME_', '_PRICE_']
+		writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=config['CSV']['DelimiterCSV'])
+
+		writer.writeheader()
+
+		length = len(list)
+		printProgressBar(0, length, prefix = 'Write to CSV list:', suffix = 'Complete', length = 50)
+		for idx, sku in enumerate(list):
+			info = getInfoBySku(sku)
+			writer.writerow({'_SKU_': sku, '_PRICE_': info[1], '_NAME_': info[0]})
+			printProgressBar(idx + 1, length, prefix = 'Write to CSV list:', suffix = 'Complete', length = 50)
 
  
 if __name__ == "__main__":
@@ -55,34 +95,5 @@ if __name__ == "__main__":
 		else:
 			listNotValid.append(result)
 
-	listUnchanged = list(set(listPrice) & set(listPriceSite))
-
-	# print('Unchanged: ' + str(listUnchanged) + '\n')
-	
-	# print('Exist in ' + config['DEFAULT']['NameFile'] + '.' + config['DEFAULT']['FormatPrice'] + ': ' + str(listValid) + '\n')
-	# print(" SKU      Name      Price")
-	# for sku in listValid:
-	# 	print(" " + sku + " " + getInfoBySku(sku)[0] + " " + getInfoBySku(sku)[1])
-	
-	# print('\nExist in ' + config['DEFAULT']['NameFileSecond'] + '.' + config['DEFAULT']['FormatPrice'] + ': ' + str(listNotValid) + '\n')
-	# print(" SKU      Name      Price")
-	# for sku in listNotValid:
-	# 	print(" " + sku + " " + getInfoBySku(sku)[0] + " " + getInfoBySku(sku)[1])
-
-	with open(config['DEFAULT']['NameFileOut'] + '.' + config['DEFAULT']['FormatPrice'], 'w', newline='') as csvfile:
-		csvfile.write('Exist in ' + config['DEFAULT']['NameFile'] + '.' + config['DEFAULT']['FormatPrice'] + '\n\n')
-
-		fieldnames = ['_SKU_', '_NAME_', '_PRICE_']
-		writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=config['CSV']['DelimiterCSV'])
-
-		writer.writeheader()
-
-		for sku in listValid:
-			writer.writerow({'_SKU_': sku, '_PRICE_': getInfoBySku(sku)[1], '_NAME_': getInfoBySku(sku)[0]})
-
-		csvfile.write('\nExist in ' + config['DEFAULT']['NameFileSecond'] + '.' + config['DEFAULT']['FormatPrice'] + '\n\n')
-
-		writer.writeheader()
-		
-		for sku in listNotValid:
-			writer.writerow({'_SKU_': sku, '_PRICE_': getInfoBySku(sku)[1], '_NAME_': getInfoBySku(sku)[0]})
+	writeInFile(config['DEFAULT']['NameFile'], listValid)
+	writeInFile(config['DEFAULT']['NameFileSecond'], listNotValid)
